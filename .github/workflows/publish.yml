@@ -1,7 +1,11 @@
 # Release pipeline for the public PyPI package.
 #
 # Trust boundaries:
-# - A GitHub Release must point at a valid, SSH-signed version tag.
+# - A GitHub Release must point at a commit reachable from protected main.
+# - The SSH signer allowlist is loaded from protected main, not from the tag
+#   checkout, so a release tag cannot replace its own trust anchor.
+# - A release rerun after signer rotation requires protected main to retain the
+#   former public key in .allowed_signers.
 # - The tag version must match pyproject.toml exactly.
 # - Build, SBOM, checksums, and attestations all refer to the same downloaded
 #   workflow artifact.
@@ -39,9 +43,6 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          git config --local gpg.format ssh
-          git config --local gpg.ssh.allowedSignersFile "$GITHUB_WORKSPACE/.allowed_signers"
-          git verify-tag "$RELEASE_TAG"
 
           if [[ ! "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
             echo "Release tag must be an exact vX.Y.Z version: $RELEASE_TAG"
@@ -54,6 +55,19 @@ jobs:
             echo "Checked-out commit does not match $RELEASE_TAG"
             exit 1
           fi
+
+          git fetch --no-tags origin \
+            '+refs/heads/main:refs/remotes/origin/main'
+          if ! git merge-base --is-ancestor "$TAG_COMMIT" origin/main; then
+            echo "$RELEASE_TAG does not point to a commit on protected main"
+            exit 1
+          fi
+
+          TRUSTED_SIGNERS="$RUNNER_TEMP/validibot-allowed-signers"
+          git show origin/main:.allowed_signers > "$TRUSTED_SIGNERS"
+          git config --local gpg.format ssh
+          git config --local gpg.ssh.allowedSignersFile "$TRUSTED_SIGNERS"
+          git verify-tag "$RELEASE_TAG"
 
           PACKAGE_VERSION="$(python3 -c \
             'import pathlib, tomllib; print(tomllib.loads(pathlib.Path("pyproject.toml").read_text())["project"]["version"])')"
@@ -95,7 +109,17 @@ jobs:
             --output-file sbom/validibot-cli.cdx.xml
 
       - name: Record release checksums
-        run: sha256sum dist/* sbom/* > SHA256SUMS
+        shell: bash
+        run: |
+          set -euo pipefail
+          (
+            cd dist
+            sha256sum *
+          ) > SHA256SUMS
+          (
+            cd sbom
+            sha256sum *
+          ) >> SHA256SUMS
 
       - name: Upload immutable release bundle
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -106,7 +130,7 @@ jobs:
             sbom/
             SHA256SUMS
           if-no-files-found: error
-          retention-days: 90
+          retention-days: 30
 
   release-evidence:
     name: Attest and attach release evidence
@@ -135,6 +159,7 @@ jobs:
           RELEASE_TAG: ${{ github.event.release.tag_name }}
         run: |
           gh release upload "$RELEASE_TAG" \
+            dist/* \
             sbom/validibot-cli.cdx.json \
             sbom/validibot-cli.cdx.xml \
             SHA256SUMS \
