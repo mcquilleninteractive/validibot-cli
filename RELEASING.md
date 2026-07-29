@@ -53,11 +53,21 @@ git config gpg.ssh.allowedSignersFile .allowed_signers
 git verify-tag vX.Y.Z
 ```
 
-Verify the hashes after downloading the release assets into one directory:
+Download the GitHub Release assets into one directory and verify the portable
+checksums:
 
 ```console
+gh release download vX.Y.Z \
+  --repo mcquilleninteractive/validibot-cli \
+  --dir release-assets
+cd release-assets
 sha256sum --check SHA256SUMS
 ```
+
+Version `0.3.2` predates flat release checksums and does not attach the
+distributions to its GitHub Release. For that version only, download the wheel
+and source distribution from PyPI into `dist/`, place the release SBOMs in
+`sbom/`, and run `sha256sum --check SHA256SUMS` from their parent directory.
 
 Verify the GitHub-hosted SBOM attestation for a downloaded wheel:
 
