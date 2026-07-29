@@ -7,6 +7,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.2] - 2026-07-29
+
+### Added
+
+- Display workflow constants from the `c.*` assertion namespace in
+  `validibot workflows show`.
+- Publish CycloneDX JSON and XML SBOMs plus SHA-256 checksums with every
+  GitHub Release.
+- Publish GitHub SBOM attestations for both Python distributions, alongside
+  PyPI's trusted-publishing provenance attestations.
+- Run OpenSSF Scorecard analysis and publish its SARIF findings to GitHub code
+  scanning.
+
+### Security
+
+- Require every release to originate from an SSH-signed `vX.Y.Z` tag whose
+  version exactly matches `pyproject.toml`.
+- Remove manual and TestPyPI publication paths. Production releases now use
+  the protected `pypi` GitHub environment and PyPI OIDC trusted publishing
+  exclusively; no long-lived PyPI token is stored in GitHub.
+- Build from the locked dependency environment, validate the wheel and source
+  distribution with Twine, and pass one immutable workflow artifact through
+  attestation and publication.
+- Pin the dependency-audit tool used by CI.
+
+### Changed
+
+- Move the canonical project and issue URLs to the
+  `mcquilleninteractive/validibot-cli` repository.
+- Re-establish a one-to-one signed-tag/artifact identity after version 0.3.1
+  was republished from `main` following the original release workflow startup
+  failure.
+
 ## [0.3.1] - 2026-06-06
 
 ### Security

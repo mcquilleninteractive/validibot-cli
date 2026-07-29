@@ -14,4 +14,3 @@ Please do not open a public issue for suspected security vulnerabilities.
 ## Supported Versions
 
 Security fixes are provided for the latest released version of `validibot-cli`.
-

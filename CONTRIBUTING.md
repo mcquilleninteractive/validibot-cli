@@ -32,8 +32,7 @@ uv run mypy src/
 
 ## Reporting Issues
 
-- **Bugs and feature requests:** [GitHub Issues](https://github.com/danielmcquillen/validibot-cli/issues)
+- **Bugs and feature requests:** [GitHub Issues](https://github.com/mcquilleninteractive/validibot-cli/issues)
   - Include your OS, Python version, and `validibot --version`
   - If the output contains an API key or token, redact it before sharing
 - **Security vulnerabilities:** See [SECURITY.md](SECURITY.md) — do not open a public issue
-
