@@ -6,25 +6,25 @@ default:
 
 # Run tests
 test:
-    uv run pytest
+    uv run --extra dev pytest
 
 # Run tests with coverage
 test-cov:
-    uv run pytest --cov=validibot_cli
+    uv run --extra dev pytest --cov=validibot_cli
 
 # Lint and format
 lint:
-    uv run ruff check .
-    uv run ruff format --check .
+    uv run --extra dev ruff check .
+    uv run --extra dev ruff format --check .
 
 # Format code
 fmt:
-    uv run ruff format .
-    uv run ruff check --fix .
+    uv run --extra dev ruff format .
+    uv run --extra dev ruff check --fix .
 
 # Type check
 typecheck:
-    uv run mypy src/
+    uv run --extra dev mypy src/
 
 # Run all checks (lint, typecheck, test)
 check: lint typecheck test
@@ -33,57 +33,68 @@ check: lint typecheck test
 run *ARGS:
     uv run validibot {{ARGS}}
 
-# Release a new version (tag + GitHub release → PyPI publish)
-# Usage: just release 0.1.5
+# Release a new version (signed tag + GitHub release → verified PyPI publish)
+# Usage: just release 0.3.2
 release VERSION:
     #!/usr/bin/env bash
     set -euo pipefail
 
-    # Validate version format
     if [[ ! "{{VERSION}}" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-        echo "Error: Version must be in format X.Y.Z (e.g., 0.1.5)"
+        echo "Error: Version must be in format X.Y.Z (e.g., 0.3.2)"
         exit 1
     fi
 
-    # Check for uncommitted changes
     if [[ -n $(git status --porcelain) ]]; then
         echo "Error: You have uncommitted changes. Commit or stash them first."
         exit 1
     fi
 
-    # Check we're on main branch
-    BRANCH=$(git branch --show-current)
+    BRANCH="$(git branch --show-current)"
     if [[ "$BRANCH" != "main" ]]; then
-        echo "Warning: You're on branch '$BRANCH', not 'main'. Continue? [y/N]"
-        read -r REPLY
-        if [[ ! "$REPLY" =~ ^[Yy]$ ]]; then
-            exit 1
-        fi
-    fi
-
-    # Check version in pyproject.toml matches
-    TOML_VERSION=$(grep '^version = ' pyproject.toml | head -1 | sed 's/version = "\(.*\)"/\1/')
-    if [[ "$TOML_VERSION" != "{{VERSION}}" ]]; then
-        echo "Error: Version in pyproject.toml ($TOML_VERSION) doesn't match {{VERSION}}"
-        echo "Update pyproject.toml first, then commit."
+        echo "Error: Releases must be created from main, not '$BRANCH'."
         exit 1
     fi
 
-    echo "Releasing v{{VERSION}}..."
+    git fetch origin main
+    LOCAL_COMMIT="$(git rev-parse HEAD)"
+    REMOTE_COMMIT="$(git rev-parse origin/main)"
+    if [[ "$LOCAL_COMMIT" != "$REMOTE_COMMIT" ]]; then
+        echo "Error: Local main must exactly match origin/main."
+        exit 1
+    fi
 
-    # Create and push tag.
-    # -m supplies the annotation message inline so the editor never opens.
-    # With tag.gpgsign=true this stays a signed tag (provenance) but is
-    # non-interactive; without -m, git opens core.editor for the message.
-    git tag -m "Release v{{VERSION}}" "v{{VERSION}}"
-    git push origin "v{{VERSION}}"
+    TOML_VERSION="$(python3 -c \
+        'import pathlib, tomllib; print(tomllib.loads(pathlib.Path("pyproject.toml").read_text())["project"]["version"])')"
+    if [[ "$TOML_VERSION" != "{{VERSION}}" ]]; then
+        echo "Error: Version in pyproject.toml ($TOML_VERSION) doesn't match {{VERSION}}"
+        exit 1
+    fi
 
-    # Create GitHub release (triggers PyPI publish via Actions)
-    gh release create "v{{VERSION}}" \
-        --title "v{{VERSION}}" \
-        --notes "See [CHANGELOG.md](CHANGELOG.md) for details."
+    TAG="v{{VERSION}}"
+    if git rev-parse "$TAG" >/dev/null 2>&1; then
+        echo "Error: Tag $TAG already exists."
+        exit 1
+    fi
+
+    echo "Running the full release gate..."
+    just check
+    uv lock --check
+    RELEASE_CHECK_DIR="$(mktemp -d)"
+    trap 'rm -rf "$RELEASE_CHECK_DIR"' EXIT
+    uv build --no-sources --out-dir "$RELEASE_CHECK_DIR"
+    uvx --from twine==7.0.0 twine check --strict "$RELEASE_CHECK_DIR"/*
+
+    echo "Creating and verifying signed tag $TAG..."
+    git tag -s -m "Release $TAG" "$TAG"
+    git verify-tag "$TAG"
+    git push origin "$TAG"
+
+    gh release create "$TAG" \
+        --verify-tag \
+        --title "$TAG" \
+        --generate-notes
 
     echo ""
-    echo "Release v{{VERSION}} created!"
-    echo "GitHub Actions will publish to PyPI automatically."
+    echo "Release $TAG created from signed tag $LOCAL_COMMIT."
+    echo "GitHub Actions will verify it again, attest it, and publish to PyPI."
     echo "Monitor: gh run list --limit 3"

@@ -1,6 +1,6 @@
 [project]
 name = "validibot-cli"
-version = "0.3.1"
+version = "0.3.2"
 description = "Command-line interface for Validibot - your automated data validation assistant."
 readme = "README.md"
 license = { text = "MIT" }
@@ -49,8 +49,8 @@ validibot = "validibot_cli.main:app"
 [project.urls]
 Homepage = "https://validibot.com"
 Documentation = "https://docs.validibot.com"
-Repository = "https://github.com/danielmcquillen/validibot-cli"
-Issues = "https://github.com/danielmcquillen/validibot-cli/issues"
+Repository = "https://github.com/mcquilleninteractive/validibot-cli"
+Issues = "https://github.com/mcquilleninteractive/validibot-cli/issues"
 
 [build-system]
 requires = ["hatchling"]

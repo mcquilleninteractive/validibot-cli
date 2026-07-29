@@ -4,7 +4,8 @@
 
 **Command-line interface for the Validibot data validation platform**
 
-[![Build Status](https://github.com/danielmcquillen/validibot-cli/actions/workflows/ci.yml/badge.svg)](https://github.com/danielmcquillen/validibot-cli/actions)
+[![Build Status](https://github.com/mcquilleninteractive/validibot-cli/actions/workflows/ci.yml/badge.svg)](https://github.com/mcquilleninteractive/validibot-cli/actions)
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/mcquilleninteractive/validibot-cli/badge)](https://scorecard.dev/viewer/?uri=github.com/mcquilleninteractive/validibot-cli)
 [![PyPI version](https://badge.fury.io/py/validibot-cli.svg)](https://pypi.org/project/validibot-cli/)
 [![Python versions](https://img.shields.io/pypi/pyversions/validibot-cli.svg)](https://pypi.org/project/validibot-cli/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
@@ -29,7 +30,7 @@
 | Repository | Description |
 |------------|-------------|
 | **[validibot](https://github.com/danielmcquillen/validibot)** | Core platform — web UI, REST API, workflow engine |
-| **[validibot-cli](https://github.com/danielmcquillen/validibot-cli)** (this repo) | Command-line interface |
+| **[validibot-cli](https://github.com/mcquilleninteractive/validibot-cli)** (this repo) | Command-line interface |
 | **[validibot-validator-backends](https://github.com/danielmcquillen/validibot-validator-backends)** | Advanced validator backend containers (EnergyPlus™, FMI) |
 | **[validibot-shared](https://github.com/danielmcquillen/validibot-shared)** | Shared Pydantic models for data interchange |
 
@@ -355,7 +356,7 @@ validate:
 
 ```bash
 # Clone the repository
-git clone https://github.com/danielmcquillen/validibot-cli.git
+git clone https://github.com/mcquilleninteractive/validibot-cli.git
 cd validibot-cli
 
 # Install with dev dependencies
@@ -388,6 +389,6 @@ MIT License — see [LICENSE](LICENSE) for details.
 
 [Validibot Platform](https://github.com/danielmcquillen/validibot) •
 [Documentation](https://docs.validibot.com/cli) •
-[Report Issues](https://github.com/danielmcquillen/validibot-cli/issues)
+[Report Issues](https://github.com/mcquilleninteractive/validibot-cli/issues)
 
 </div>
